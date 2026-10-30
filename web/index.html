@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trilhas Adaptativas — demo</title>
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --card: #ffffff;
+    --text: #1e2230;
+    --muted: #6b7280;
+    --accent: #3b5bdb;
+    --accent-soft: #e7ecff;
+    --ok: #127c56;
+    --err: #b42318;
+    --line: #e3e6ee;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    padding: 28px 24px 18px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  header h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+  header .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  header .topo { display: flex; gap: 16px; align-items: start; justify-content: space-between; }
+  main { max-width: 860px; margin: 0 auto; padding: 0 24px 64px; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+  h2 { font-size: 18px; margin: 0 0 14px; letter-spacing: -0.01em; }
+  h3 { font-size: 16px; margin: 0 0 6px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  select, button { font: inherit; }
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+  }
+  button {
+    margin-top: 14px;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.06); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.ghost {
+    margin: 0;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--line);
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+  .hint { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+  .tag {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 10px;
+  }
+  .progresso { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .progresso span { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .barra { flex: 1; height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .barra i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s ease; }
+  .alt {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .alt:hover { border-color: #c3cbe4; background: #fafbff; }
+  .alt input { accent-color: var(--accent); }
+  .alt b { color: var(--accent); text-transform: uppercase; }
+  .feedback {
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .feedback.ok { background: #e7f6ef; color: var(--ok); }
+  .feedback.err { background: #fdecea; color: var(--err); }
+  .feedback.neutro { background: #f1f2f6; color: var(--muted); }
+  .acoes { display: flex; gap: 10px; align-items: center; }
+  .acoes button.ghost { margin-top: 14px; padding: 10px 18px; font-size: 15px; }
+  .cards { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  .card {
+    flex: 1 1 140px;
+    background: #fafbff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .card small { display: block; color: var(--muted); font-size: 12px; }
+  .card strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+  ol { list-style: none; padding: 0; margin: 0; }
+  .passo {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .passo.atual { border-left-color: var(--accent); background: #fafbff; }
+  .passo .linha { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+  .passo .p { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .passo .motivo { color: var(--muted); font-size: 12px; margin: 2px 0 6px; }
+  .passo .barra { height: 4px; }
+  .concluido { text-align: center; padding: 12px; }
+  .concluido h3 { color: var(--ok); }
+  .erro {
+    background: #fdecea;
+    color: var(--err);
+    border: 1px solid #f5c2bd;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="topo">
+    <div>
+      <h1>Trilhas de Aprendizagem Adaptativas</h1>
+      <p class="sub">DAG curricular · BKT · ordenação topológica</p>
+    </div>
+    <button id="nova" class="ghost" hidden>Nova sessão</button>
+  </div>
+</header>
+
+<main>
+  <section id="setup">
+    <h2>Qual é o seu objetivo?</h2>
+    <label for="alvo">Assunto que você quer dominar</label>
+    <select id="alvo"></select>
+    <p class="hint" id="alvoInfo">Carregando currículo…</p>
+    <button id="comecar" disabled>Começar diagnóstico</button>
+  </section>
+
+  <section id="quiz" hidden>
+    <div class="progresso">
+      <span id="quizContador"></span>
+      <div class="barra"><i id="quizBarra"></i></div>
+    </div>
+    <p class="tag" id="quizKc"></p>
+    <h2 id="quizEnunciado"></h2>
+    <form id="quizForm"></form>
+    <p class="feedback" id="quizFeedback" hidden></p>
+  </section>
+
+  <section id="trilha" hidden>
+    <div class="cards" id="stats"></div>
+    <h2>Trilha até <span id="trilhaAlvo"></span></h2>
+    <ol id="listaTrilha"></ol>
+    <div id="proximo"></div>
+  </section>
+
+  <p id="erro" class="erro" hidden></p>
+</main>
+
+<script>
+const $ = (seletor) => document.querySelector(seletor);
+const CHAVE = "trilha-demo";
+
+const state = {
+  grafo: null,
+  sessaoId: null,
+  alvo: null,
+  plano: null,
+  diagnostico: [],
+  itens: {},
+  indice: 0,
+  modo: "diagnostico",
+  perguntaAtual: null,
+  respondidas: 0,
+  acertos: 0,
+};
+
+function tela(nome) {
+  for (const id of ["setup", "quiz", "trilha"]) {
+    $("#" + id).hidden = id !== nome;
+  }
+  $("#nova").hidden = nome === "setup";
+}
+
+function mostrarErro(mensagem) {
+  const caixa = $("#erro");
+  caixa.textContent = mensagem;
+  caixa.hidden = !mensagem;
+}
+
+async function api(caminho, opcoes) {
+  const resposta = await fetch(caminho, opcoes);
+  const texto = await resposta.text();
+  let dados = {};
+  try { dados = texto ? JSON.parse(texto) : {}; } catch { dados = {}; }
+  if (!resposta.ok) {
+    throw new Error(dados.detail || "falha na requisição (" + resposta.status + ")");
+  }
+  return dados;
+}
+
+function salvar() {
+  localStorage.setItem(CHAVE, JSON.stringify({
+    sessaoId: state.sessaoId,
+    alvo: state.alvo,
+    itens: state.itens,
+    diagnostico: state.diagnostico,
+    respondidas: state.respondidas,
+    acertos: state.acertos,
+  }));
+}
+
+function limparSessao() {
+  localStorage.removeItem(CHAVE);
+}
+
+/* ---------- grafo ---------- */
+
+function fechamento(alvo) {
+  const porId = new Map(state.grafo.kcs.map((kc) => [kc.id, kc]));
+  const vistos = new Set([alvo]);
+  const pilha = [alvo];
+  while (pilha.length) {
+    const atual = pilha.pop();
+    for (const origem of porId.get(atual).prereqs) {
+      if (!vistos.has(origem)) { vistos.add(origem); pilha.push(origem); }
+    }
+  }
+  return vistos;
+}
+
+function atualizarInfo() {
+  const alvo = $("#alvo").value;
+  if (!alvo || !state.grafo) return;
+  const caminho = fechamento(alvo);
+  const kc = state.grafo.kcs.find((k) => k.id === alvo);
+  const podados = state.grafo.kcs.length - caminho.size;
+  $("#alvoInfo").textContent =
+    `${caminho.size} assuntos no caminho até "${kc.nome}" · ` +
+    `${podados} assuntos fora do caminho serão ignorados.`;
+}
+
+async function carregarGrafo() {
+  state.grafo = await api("/graph");
+  const select = $("#alvo");
+  const kcs = [...state.grafo.kcs].sort(
+    (a, b) => a.area.localeCompare(b.area) || a.nome.localeCompare(b.nome)
+  );
+  for (const kc of kcs) {
+    const opcao = document.createElement("option");
+    opcao.value = kc.id;
+    opcao.textContent = `${kc.nome} — ${kc.area}`;
+    select.appendChild(opcao);
+  }
+  select.value = "funcao_quadratica";
+  atualizarInfo();
+  $("#comecar").disabled = false;
+}
+
+/* ---------- perguntas ---------- */
+
+function renderizarPergunta(pergunta, contador, progresso) {
+  $("#quizKc").textContent = pergunta.kcNome;
+  $("#quizEnunciado").textContent = pergunta.enunciado;
+  $("#quizContador").textContent = contador;
+  $("#quizBarra").style.width = Math.round(progresso * 100) + "%";
+
+  const form = $("#quizForm");
+  form.innerHTML = "";
+  pergunta.alternativas.forEach((texto, indice) => {
+    const letra = "abcd"[indice];
+    const rotulo = document.createElement("label");
+    rotulo.className = "alt";
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "alt";
+    radio.value = letra;
+    const negrito = document.createElement("b");
+    negrito.textContent = letra;
+    const span = document.createElement("span");
+    span.textContent = texto;
+    rotulo.append(radio, negrito, span);
+    form.appendChild(rotulo);
+  });
+
+  const acoes = document.createElement("div");
+  acoes.className = "acoes";
+  const botao = document.createElement("button");
+  botao.type = "submit";
+  botao.textContent = "Responder";
+  const naoSei = document.createElement("button");
+  naoSei.type = "button";
+  naoSei.className = "ghost";
+  naoSei.textContent = "Não sei";
+  naoSei.addEventListener("click", () => enviar("?"));
+  acoes.append(botao, naoSei);
+  form.appendChild(acoes);
+
+  $("#quizFeedback").hidden = true;
+  state.perguntaAtual = pergunta;
+  tela("quiz");
+}
+
+function perguntaDoDiagnostico() {
+  const questao = state.diagnostico[state.indice];
+  return {
+    itemId: questao.item_id,
+    kcNome: questao.kc_nome,
+    enunciado: questao.enunciado,
+    alternativas: questao.alternativas,
+  };
+}
+
+/* O motor escolhe o item menos respondido do KC, para variar as questões. */
+async function perguntaDoPasso() {
+  const dados = await api(`/sessions/${state.sessaoId}/next-item`);
+  const questao = dados.questao;
+  if (!questao) return null;
+  return {
+    itemId: questao.item_id,
+    kcNome: questao.kc_nome,
+    enunciado: questao.enunciado,
+    alternativas: questao.alternativas,
+  };
+}
+
+function iniciarDiagnostico() {
+  state.modo = "diagnostico";
+  state.indice = 0;
+  const total = state.diagnostico.length;
+  if (!total) { mostrarTrilha(); return; }
+  const pergunta = perguntaDoDiagnostico();
+  renderizarPergunta(pergunta, `Diagnóstico ${state.indice + 1} de ${total}`, state.indice / total);
+}
+
+/* ---------- respostas ---------- */
+
+async function responder(itemId, letra, aoConcluir) {
+  try {
+    const dados = await api(`/sessions/${state.sessaoId}/answers`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ item_id: itemId, escolha: letra }),
+    });
+
+    state.plano = dados.plano;
+    state.respondidas += 1;
+    if (dados.correta) state.acertos += 1;
+    salvar();
+
+    const caixa = $("#quizFeedback");
+    const variacao = `Domínio de "${dados.kc_nome}": ${pct(dados.p_antes)} → ${pct(dados.p_depois)}`;
+    caixa.hidden = false;
+    if (dados.nao_sei) {
+      caixa.className = "feedback neutro";
+      caixa.textContent = `Tudo bem, esse assunto entra na trilha. ${variacao}`;
+    } else if (dados.correta) {
+      caixa.className = "feedback ok";
+      caixa.textContent = `Correto. ${variacao}` + (dados.dominado ? " (dominado)" : "");
+    } else {
+      caixa.className = "feedback err";
+      caixa.textContent = `Errado. ${variacao}`;
+    }
+
+    setTimeout(aoConcluir, 1100);
+  } catch (erro) {
+    mostrarErro(erro.message);
+    for (const botao of $("#quizForm").querySelectorAll("button")) botao.disabled = false;
+  }
+}
+
+$("#quizForm").addEventListener("submit", (evento) => {
+  evento.preventDefault();
+  const escolhida = document.querySelector('input[name="alt"]:checked');
+  if (!escolhida) {
+    const caixa = $("#quizFeedback");
+    caixa.hidden = false;
+    caixa.className = "feedback err";
+    caixa.textContent = "Escolha uma alternativa ou clique em \"Não sei\".";
+    return;
+  }
+  enviar(escolhida.value);
+});
+
+function enviar(escolha) {
+  if (!state.perguntaAtual) return;
+  for (const botao of $("#quizForm").querySelectorAll("button")) botao.disabled = true;
+
+  responder(state.perguntaAtual.itemId, escolha, () => {
+    if (state.modo === "diagnostico") {
+      state.indice += 1;
+      if (state.indice < state.diagnostico.length) {
+        renderizarPergunta(
+          perguntaDoDiagnostico(),
+          `Diagnóstico ${state.indice + 1} de ${state.diagnostico.length}`,
+          state.indice / state.diagnostico.length
+        );
+      } else {
+        mostrarTrilha();
+      }
+      return;
+    }
+    mostrarTrilha();
+  });
+}
+
+/* ---------- trilha ---------- */
+
+function pct(valor) {
+  return Math.round(valor * 100) + "%";
+}
+
+function mostrarTrilha() {
+  const plano = state.plano;
+  state.modo = "trilha";
+  $("#trilhaAlvo").textContent = plano.target.nome;
+
+  const cartoes = [
+    ["Pendentes", plano.pendentes],
+    ["Podados do grafo", plano.podados],
+    ["Acertos", `${state.acertos}/${state.respondidas}`],
+  ];
+  const stats = $("#stats");
+  stats.innerHTML = "";
+  for (const [rotulo, valor] of cartoes) {
+    const cartao = document.createElement("div");
+    cartao.className = "card";
+    const small = document.createElement("small");
+    small.textContent = rotulo;
+    const strong = document.createElement("strong");
+    strong.textContent = valor;
+    cartao.append(small, strong);
+    stats.appendChild(cartao);
+  }
+
+  const lista = $("#listaTrilha");
+  lista.innerHTML = "";
+  plano.passos.forEach((passo, indice) => {
+    const item = document.createElement("li");
+    item.className = "passo" + (indice === 0 ? " atual" : "");
+
+    const linha = document.createElement("div");
+    linha.className = "linha";
+    const nome = document.createElement("strong");
+    nome.textContent = passo.nome;
+    const dominio = document.createElement("span");
+    dominio.className = "p";
+    dominio.textContent = pct(passo.p_atual);
+    linha.append(nome, dominio);
+
+    const motivo = document.createElement("div");
+    motivo.className = "motivo";
+    motivo.textContent = passo.motivo;
+
+    const barra = document.createElement("div");
+    barra.className = "barra";
+    const preenchimento = document.createElement("i");
+    preenchimento.style.width = pct(passo.p_atual);
+    barra.appendChild(preenchimento);
+
+    item.append(linha, motivo, barra);
+    lista.appendChild(item);
+  });
+
+  const proximo = $("#proximo");
+  proximo.innerHTML = "";
+
+  if (plano.alcancado || !plano.passos.length) {
+    const caixa = document.createElement("div");
+    caixa.className = "concluido";
+    const titulo = document.createElement("h3");
+    titulo.textContent = plano.alcancado ? "Objetivo alcançado" : "Nada pendente";
+    const texto = document.createElement("p");
+    texto.textContent = `${state.acertos} acertos em ${state.respondidas} respostas. ` +
+      `${plano.sem_item} assuntos ficaram fora da trilha por não terem item de avaliação.`;
+    caixa.append(titulo, texto);
+    proximo.appendChild(caixa);
+    tela("trilha");
+    return;
+  }
+
+  const passo = plano.passos[0];
+  const aviso = document.createElement("p");
+  aviso.className = "hint";
+  aviso.textContent = `Próximo passo: ${passo.nome} (${passo.motivo}).`;
+  const botao = document.createElement("button");
+  botao.textContent = "Estudar " + passo.nome;
+  botao.addEventListener("click", async () => {
+    mostrarErro("");
+    botao.disabled = true;
+    try {
+      const pergunta = await perguntaDoPasso();
+      if (!pergunta) {
+        aviso.textContent = `O próximo passo (${passo.nome}) não tem item cadastrado. ` +
+          "A trilha não pode avançar nesse assunto.";
+        botao.remove();
+        return;
+      }
+      renderizarPergunta(pergunta, "Passo da trilha", passo.p_atual);
+    } catch (erro) {
+      mostrarErro(erro.message);
+      botao.disabled = false;
+    }
+  });
+  proximo.append(aviso, botao);
+  tela("trilha");
+}
+
+/* ---------- inicialização ---------- */
+
+$("#alvo").addEventListener("change", atualizarInfo);
+
+$("#comecar").addEventListener("click", async () => {
+  mostrarErro("");
+  $("#comecar").disabled = true;
+  try {
+    const dados = await api("/sessions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ target_id: $("#alvo").value, aluno: "Visitante" }),
+    });
+
+    state.sessaoId = dados.sessao_id;
+    state.alvo = $("#alvo").value;
+    state.plano = dados.plano;
+    state.diagnostico = dados.diagnostico;
+    state.itens = {};
+    for (const questao of dados.diagnostico) {
+      state.itens[questao.kc_id] = questao.item_id;
+    }
+    state.respondidas = 0;
+    state.acertos = 0;
+    salvar();
+
+    iniciarDiagnostico();
+  } catch (erro) {
+    mostrarErro(erro.message);
+  } finally {
+    $("#comecar").disabled = false;
+  }
+});
+
+$("#nova").addEventListener("click", () => {
+  limparSessao();
+  state.sessaoId = null;
+  state.plano = null;
+  state.diagnostico = [];
+  state.itens = {};
+  state.perguntaAtual = null;
+  state.respondidas = 0;
+  state.acertos = 0;
+  mostrarErro("");
+  tela("setup");
+  atualizarInfo();
+});
+
+async function retomar() {
+  const bruto = localStorage.getItem(CHAVE);
+  if (!bruto) { tela("setup"); return; }
+  try {
+    const salvo = JSON.parse(bruto);
+    const estado = await api(`/sessions/${salvo.sessaoId}`);
+    state.sessaoId = salvo.sessaoId;
+    state.alvo = salvo.alvo;
+    state.itens = salvo.itens || {};
+    state.diagnostico = salvo.diagnostico || [];
+    state.respondidas = salvo.respondidas || 0;
+    state.acertos = salvo.acertos || 0;
+    state.plano = estado.plano;
+    $("#alvo").value = salvo.alvo;
+    atualizarInfo();
+    mostrarTrilha();
+  } catch {
+    limparSessao();
+    tela("setup");
+  }
+}
+
+(async function iniciar() {
+  try {
+    await carregarGrafo();
+    await retomar();
+  } catch (erro) {
+    mostrarErro("Não foi possível falar com a API: " + erro.message);
+    tela("setup");
+  }
+})();
+</script>
+</body>
+</html>
